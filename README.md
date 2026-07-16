@@ -21,7 +21,7 @@ Real-world music platforms such as Spotify, YouTube, and TikTok use different ty
 
 Collaborative filtering makes recommendations based on patterns from multiple users. For example, if two users enjoy many of the same songs, the system may recommend songs that one user liked to the other user. Content-based filtering instead compares the attributes of songs with the preferences stored in a user's taste profile.
 
-My recommender will use content-based filtering. Each song will be compared with the user's preferred genre, mood, energy, tempo, valence, and danceability. The system will calculate a weighted relevance score for each song, rank all songs from highest score to lowest score, and return the strongest matches.
+My recommender will use content-based filtering. Each song will be compared with the user's favorite genre, favorite mood, target energy, target tempo, target valence, target danceability, and target acousticness. The system will calculate a weighted relevance score for each song, rankence, target danceability, and target acoustic all songs from highest score to lowest score, and return the strongest matches.
 
 ### Song Data
 
@@ -38,54 +38,104 @@ Each `Song` object will store:
 - `danceability`
 - `acousticness`
 
-The `id`, `title`, and `artist` identify the song. The remaining attributes describe the song's musical style and vibe. The first version of the recommender will primarily score genre, mood, energy, tempo, valence, and danceability. Acousticness may be used in a later experiment or future improvement.
+The `id`, `title`, and `artist` fields identify the song and will be used for displaying recommendations. Genre and mood are categorical recommendation features. Energy, tempo, valence, danceability, and acousticness are numerical recommendation features. The recommender will use all seven recommendation features when calculating how closely each song matches the user's taste profile.
 
 ### UserProfile Features
 
 Each `UserProfile` object will store:
 
-- `preferred_genre`
-- `preferred_mood`
-- `preferred_energy`
-- `preferred_tempo_bpm`
-- `preferred_valence`
-- `preferred_danceability`
+- `favorite_genre`
+- `favorite_mood`
+- `target_energy`
+- `target_tempo_bpm`
+- `target_valence`
+- `target_danceability`
+- `target_acousticness`
 
-These preferences describe the kind of musical experience the user wants. For example, one user may prefer happy, high-energy, danceable pop music, while another may prefer relaxed, low-energy lofi music.
+The categorical preferences use `favorite_` because they represent the user's preferred categories. The numerical preferences use `target_` because the recommender will measure how close each song's numerical value is to the user's desired value.
+
+These preferences describe the musical experience the user wants. For example, one user may prefer positive, high-energy, danceable gym music, while another may prefer relaxed, low-energy, highly acoustic lofi music.
+
+### Example User Profile
+
+The first test profile represents a user looking for energetic and motivating music for basketball or the gym:
+
+- Favorite genre: `hip-hop`
+- Favorite mood: `intense`
+- Target energy: `0.90`
+- Target tempo: `135 BPM`
+- Target valence: `0.70`
+- Target danceability: `0.75`
+- Target acousticness: `0.10`
+
+This profile should rank energetic, intense, rhythm-focused, and low-acousticness songs higher than calm, slow, or highly acoustic tracks.
+
+### User Profile Evaluation
+
+The AI critique confirmed that this profile should clearly distinguish intense gym music from chill lofi music. The target energy and tempo are high, while the target acousticness is low. Those preferences strongly favor active and heavily produced songs over calm, slow, and acoustic tracks.
+
+The profile is specific, but it is not too narrow for this simulation because genre and mood are weighted bonuses rather than mandatory filters. A song does not need to match every preference perfectly to receive a strong total score.
+
+Energy, valence, and danceability may be somewhat related, but they represent different qualities. Energy measures intensity, valence measures emotional positivity, and danceability measures rhythm and suitability for movement. Tempo adds information about speed, while acousticness distinguishes acoustic music from more electronic or heavily produced music.
+
+One important correction was changing `hiphop` to `hip-hop` so that the user's favorite genre matches the exact spelling used in `songs.csv`.
 
 ### Algorithm Recipe
 
-The recommender will calculate a weighted score for every song:
+The recommender will calculate a weighted relevance score for every song using the following rules:
 
-- Genre match: 25 points
 - Mood match: 20 points
+- Genre match: 15 points
 - Energy closeness: up to 20 points
 - Valence closeness: up to 15 points
 - Danceability closeness: up to 10 points
 - Tempo closeness: up to 10 points
+- Acousticness closeness: up to 10 points
 
 The maximum possible score is 100 points.
 
-Genre and mood are categorical features, so the system will award points when the values match the user's preferences. Energy, valence, danceability, and tempo are numerical features, so the system will award more points when the song's values are closer to the user's preferred values.
+Genre and mood are categorical features. A song receives the full category points when its value exactly matches the user's preference. For example, a song receives 15 genre points when its genre matches the user's favorite genre.
 
-The system will not assume that higher values are always better. For example, a user who prefers an energy level of `0.30` should receive more points for a song with an energy level of `0.35` than for a song with an energy level of `0.95`.
+Energy, valence, danceability, tempo, and acousticness are numerical features. These features receive points based on closeness to the user's target value. A smaller difference produces more points, while a larger difference produces fewer points.
+
+For features already measured from `0.0` to `1.0`, the system can calculate closeness using:
+
+`closeness = 1 - absolute difference`
+
+For example, if the user's target energy is `0.90` and a song's energy is `0.82`, the difference is `0.08`, so the closeness is `0.92`. The energy contribution would be `0.92 × 20 = 18.4` points.
+
+The system will not assume that higher values are always better. If a user wants calm music with a target energy of `0.30`, a song with energy `0.35` should receive more points than a song with energy `0.95`.
+
+Tempo must be normalized because it uses a different scale. Energy, valence, danceability, and acousticness range from `0.0` to `1.0`, while tempo is measured in beats per minute. Normalizing the tempo difference prevents tempo from dominating the other numerical features.
 
 After calculating a score for every song, the recommender will sort all songs from highest score to lowest score and return the top-ranked songs.
 
+### Expected Limitations and Biases
+
+This recommender may create a filter bubble because it mainly rewards songs that already resemble the user's stated preferences. A user who prefers intense hip-hop may repeatedly receive energetic and rhythm-focused music while receiving fewer opportunities to discover calm, acoustic, classical, jazz, or other genres.
+
+Exact category matching may also be too rigid. For example, `pop` and `indie pop` are related styles, but the first version may treat them as completely different because their strings are not identical.
+
+The catalog is also small and partly synthetic. This means the available genres, moods, and numerical values strongly influence which recommendations can appear. A future version could use partial genre similarity and occasionally include one exploratory recommendation outside the user's normal preferences.
+
 ### Scoring Rule vs. Ranking Rule
 
-The scoring rule evaluates one song at a time. It answers the question: "How closely does this song match the user's taste profile?" The system calculates the score by comparing the song's attributes with the user's preferences and applying the selected weights.
+The scoring rule evaluates one song at a time. It answers the question: "How closely does this song match the user's taste profile?" The system compares the song's genre, mood, energy, valence, danceability, tempo, and acousticness with the user's preferences and applies the assigned weights.
 
-The ranking rule is used after every song receives a score. It sorts the complete list of songs from highest score to lowest score so that the strongest matches appear first. The recommender then selects the top results from that ranked list.
+The ranking rule is applied only after every song has received a score. It sorts the complete list of songs from highest score to lowest score so that the strongest matches appear first. The recommender then selects the top three songs from the ranked list.
 
 ### Recommendation Flow
 
-User taste profile  
-→ Compare the profile with each song  
-→ Calculate a weighted relevance score  
-→ Repeat for every song in the catalog  
-→ Rank all songs from highest to lowest score  
-→ Return the top recommendations
+`songs.csv` and the user taste profile  
+→ Load every song from the catalog  
+→ Loop through the songs one at a time  
+→ Check the genre and mood matches  
+→ Calculate closeness for energy, valence, danceability, tempo, and acousticness  
+→ Multiply each result by its assigned weight  
+→ Combine all points into one total relevance score  
+→ Store each song with its score  
+→ Sort all songs from highest score to lowest score  
+→ Return the top three recommendations
 
 ---
 
