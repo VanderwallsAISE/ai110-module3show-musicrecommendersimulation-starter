@@ -1,73 +1,90 @@
-# 🎧 Model Card: Music Recommender Simulation
+# 🎧 Model Card: VibeRank 1.0
 
-## 1. Model Name  
+## 1. Model Name
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
-
----
-
-## 2. Intended Use  
-
-Describe what your recommender is designed to do and who it is for. 
-
-Prompts:  
-
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+**VibeRank 1.0**
 
 ---
 
-## 3. How the Model Works  
+## 2. Intended Use
 
-Explain your scoring approach in simple language.  
+VibeRank 1.0 is a classroom music-recommender simulation. It generates personalized song suggestions by comparing a user's stated preferences with the attributes of each song in the catalog.
 
-Prompts:  
+The system assumes that the user can describe the kind of music they want through preferences such as genre, mood, energy, tempo, valence, danceability, and acousticness.
 
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
-
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+This project is intended for learning and experimentation. It is not designed for real users or production use.
 
 ---
 
-## 4. Data  
+## 3. How the Model Works
 
-Describe the dataset the model uses.  
+The recommender gives every song a weighted relevance score.
 
-Prompts:  
+A matching mood adds 20 points, and a matching genre adds 15 points. The system also compares the song's energy, valence, danceability, tempo, and acousticness with the user's target values. Songs whose numerical features are closer to the user's preferences receive more points.
 
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
+The numerical weights are:
 
----
+- Energy closeness: up to 20 points
+- Valence closeness: up to 15 points
+- Danceability closeness: up to 10 points
+- Tempo closeness: up to 10 points
+- Acousticness closeness: up to 10 points
 
-## 5. Strengths  
+The highest possible score is 100 points. After every song receives a score, the system sorts the complete catalog from highest score to lowest score and returns the top recommendations.
 
-Where does your system seem to work well  
-
-Prompts:  
-
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+The system also provides reasons explaining how each song earned its points. I expanded the starter logic by adding more numerical features, a complete 100-point scoring system, multiple test profiles, edge-case testing, and explanations for the recommendations.
 
 ---
 
-## 6. Limitations and Bias 
+## 4. Data
 
-## Limitations and Bias
+The recommender uses a catalog of 17 fictional songs stored in `data/songs.csv`.
 
-The recommender uses a small and partially synthetic catalog of only 17 songs, so the available data strongly influences the results. It uses exact string matching, which treats related genres such as `pop` and `indie pop` as completely different. The system may create a filter bubble because it repeatedly rewards music that resembles the user's existing preferences. Its feature weights were manually chosen rather than learned from real listener behavior, so different weights could produce significantly different rankings. The system also does not use listening history, skips, likes, lyrics, cultural context, or feedback from real users.
+Each song includes identification information:
+
+- `id`
+- `title`
+- `artist`
+
+Each song also includes recommendation features:
+
+- `genre`
+- `mood`
+- `energy`
+- `tempo_bpm`
+- `valence`
+- `danceability`
+- `acousticness`
+
+The original catalog contained 10 songs. I added seven fictional songs to increase the variety of genres and moods.
+
+The dataset is still very small and partially AI-generated. It does not represent the full range of real music, languages, cultures, artists, genres, or listener preferences.
 
 ---
 
-## 7. Evaluation  
+## 5. Strengths
+
+The recommender works best when the user's categorical and numerical preferences agree.
+
+The High-Energy Happy Pop profile produced a reasonable result because `Sunrise City` matched both the requested genre and mood and was also close to the numerical targets.
+
+The Chill Lofi profile correctly ranked calm, slow, and highly acoustic songs near the top. The Deep Intense Rock profile also produced an intuitive first result because `Storm Runner` matched the requested genre, mood, energy, and tempo.
+
+Another strength is explainability. The system shows the points contributed by each feature, so a user can understand why a song ranked highly.
+
+---
+
+## 6. Limitations and Bias
+
+The recommender uses a small and partially synthetic catalog of only 17 songs, so the available data strongly influences the results. It uses exact string matching, which treats related genres such as `pop` and `indie pop` as completely different. The system may create a filter bubble because it repeatedly rewards music that resembles the user's existing preferences.
+
+Its feature weights were manually chosen rather than learned from real listener behavior, so different weights could produce significantly different rankings. The system also does not use listening history, skips, likes, lyrics, cultural context, or feedback from real users.
+
+The small catalog creates another imbalance. Genres with only one song have fewer opportunities to appear than genres represented by several songs. The system can also behave strangely when a user's categorical preferences conflict with their numerical targets.
+
+---
+
+## 7. Evaluation
 
 ### Profiles Tested
 
@@ -234,35 +251,38 @@ The Conflicting High-Energy Lofi profile showed how categorical and numerical pr
 
 `Gym Hero` appeared fourth because its numerical features matched the high-energy portion of the profile very well, but it received no genre or mood points and had low similarity for acousticness. This result shows that the recommender balances multiple preferences, but it also shows that the categorical weights can strongly influence the ranking even when the numerical preferences conflict.
 
-
 ### Scoring Experiment: Removing Mood
 
 I temporarily removed the 20-point mood-match bonus and ran the same four user profiles again. This allowed me to examine how strongly the mood feature affected the ranking.
 
-Without the mood bonus, songs with similar energy, tempo, valence, danceability, and acousticness became more competitive even when their emotional label did not match the user. [Describe one or two actual ranking changes here.]
+For the Happy Pop profile, `Gym Hero` moved from third place to second place because it had strong numerical similarity and did not lose any mood points, while `Rooftop Lights` dropped from second to third after losing its mood bonus.
 
-The experiment produced more varied recommendations, but some results felt less accurate because songs could closely match the numerical targets while expressing a different mood. I restored the mood feature because it provides useful emotional context, although its 20-point weight has a noticeable influence on the final rankings.
----
+For the Chill Lofi profile, `Focus Flow` moved from fourth place to second because it matched the lofi genre and was close to the numerical targets without depending on a mood match. `Midnight Coding` dropped from second to third after losing 20 mood points.
 
-## 8. Future Work  
+For the Deep Intense Rock profile, `Iron Verdict` moved above `Gym Hero` because `Gym Hero` lost its mood-match advantage. For the conflicting lofi profile, `Focus Flow` moved to first place because it kept its genre bonus and had stronger numerical similarity than the other lofi songs after the mood bonus was removed.
 
-Ideas for how you would improve the model next.  
-
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+The experiment produced more varied recommendations, but some results felt less emotionally accurate because songs could closely match the numerical targets while expressing a different mood. I restored the mood feature because it provides useful emotional context, although its 20-point weight has a noticeable influence on the final rankings.
 
 ---
 
-## 9. Personal Reflection  
+## 8. Future Work
 
-A few sentences about your experience.  
+A future version could use a much larger and more representative catalog.
 
-Prompts:  
+It could recognize partial similarity between related genres such as `pop` and `indie pop` instead of treating them as completely different categories.
 
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+It could learn feature weights from real listening behavior such as likes, skips, replays, playlist additions, and listening time instead of relying on manually selected weights.
+
+The system could also include diversity logic so that the top results do not contain too many songs from the same artist or genre.
+
+---
+
+## 9. Personal Reflection
+
+This project helped me understand the general structure of a content-based recommender. I saw how song data and user preferences can be transformed into scores, how those scores can be used to rank songs, and how changing one weight can change the final recommendations. I also learned that a simple rule-based algorithm can produce results that feel personalized even though it is not actually learning from users.
+
+AI tools helped me generate and modify much of the implementation, debug the package imports, and explain parts of the scoring logic. I still had to check the AI's work because it sometimes created inconsistencies. For example, I had to correct `hiphop` to `hip-hop`, ensure that the profile fields matched the scoring function, verify that the weights totaled 100 points, and confirm the results through tests and experiments.
+
+However, I did not enjoy the implementation process very much because I relied heavily on AI and did not feel that I was learning how to write the Python code independently. I learned more about the architecture, evaluation process, feature weights, bias, and documentation than about Python syntax or implementing the system from scratch.
+
+This experience showed me the difference between completing an AI-assisted engineering workflow and independently mastering the code. My next step would be to rebuild a much smaller recommender manually, using only a few songs and features, so I can understand and write each line myself before returning to a larger version.
