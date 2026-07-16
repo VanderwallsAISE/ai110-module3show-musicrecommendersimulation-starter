@@ -175,16 +175,30 @@ You can add more tests in `tests/test_recommender.py`.
 ---
 
 ## Sample Recommendation Output
+```text
+Loaded songs: 17
 
-Paste a sample of your recommender's output here as a text block so a reader can see what it produces:
+Top recommendations:
 
-```
-# e.g.:
-# User profile: genre=indie, mood=chill, energy=low
-# Recommendations:
-#   1. ...
-#   2. ...
-#   3. ...
+1. Sunrise City by Neon Echo
+   Score: 98.40
+   Reasons: mood match (+20.00), genre match (+15.00), energy closeness (+19.60), valence closeness (+14.40), danceability closeness (+9.90), acousticness closeness (+9.70), tempo closeness (+9.80)
+
+2. Rooftop Lights by Indigo Parade
+   Score: 81.45
+   Reasons: mood match (+20.00), energy closeness (+19.20), valence closeness (+14.85), danceability closeness (+9.80), acousticness closeness (+8.00), tempo closeness (+9.60)
+
+3. Gym Hero by Max Pulse
+   Score: 73.95
+   Reasons: genre match (+15.00), energy closeness (+17.40), valence closeness (+14.55), danceability closeness (+9.20), acousticness closeness (+9.00), tempo closeness (+8.80)
+
+4. Neon Cathedral by Pulse Divine
+   Score: 60.25
+   Reasons: energy closeness (+18.20), valence closeness (+14.85), danceability closeness (+8.90), acousticness closeness (+9.10), tempo closeness (+9.20)
+
+5. Concrete Sermon by Kofi Blaze
+   Score: 57.15
+   Reasons: energy closeness (+18.40), valence closeness (+11.55), danceability closeness (+9.70), acousticness closeness (+10.00), tempo closeness (+7.50)
 ```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
